@@ -108,8 +108,12 @@ export const userAPI = {
 
 // Simulator API
 export const simulatorAPI = {
-    // 시뮬레이터 목록 조회
-    getSimulators: () => api.get('/api/simulators'),
+    // 시뮬레이터 목록 조회 (페이지네이션 지원)
+    getSimulators: (skip = 0, limit = 100) => 
+        api.get('/api/simulators', { params: { skip, limit } }),
+    
+    // 특정 시뮬레이터 조회
+    getSimulator: (id) => api.get(`/api/simulators/${id}`),
     
     // 시뮬레이터 생성
     createSimulator: (data) => api.post('/api/simulators', data),
@@ -120,9 +124,12 @@ export const simulatorAPI = {
     // 시뮬레이터 삭제
     deleteSimulator: (id) => api.delete(`/api/simulators/${id}`),
     
+    // 시뮬레이터 활성화 상태 토글
+    toggleSimulator: (id) => api.patch(`/api/simulators/${id}/toggle`),
+    
     // 시뮬레이터 데이터 조회 (공개 API)
     getSimulatorData: (userId, simulatorName) => 
-        axios.get(`${API_BASE_URL}/api/data/${userId}-${simulatorName}`),
+        axios.get(`${API_BASE_URL}/api/data/${userId}/${simulatorName}`),
 };
 
 export default api;

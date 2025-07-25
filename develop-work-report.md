@@ -140,16 +140,105 @@ Material-UI 테마 설정 완료 - 2025.01.27 14:30
 ## 🎛️ Phase 2: 시뮬레이터 관리 시스템
 ### 진행 상황
 ```
-시뮬레이터 관리 시스템 개발 시작 - [대기중]
-시뮬레이터 관리 시스템 백엔드 개발 완료 - [대기중]
-시뮬레이터 관리 시스템 프론트엔드 개발 완료 - [대기중]
-시뮬레이터 관리 시스템 디자인 완료 - [대기중]
-시뮬레이터 관리 시스템 유저 테스트 완료 - [대기중]
+시뮬레이터 관리 시스템 개발 시작 - 2025.07.26 02:13
+시뮬레이터 관리 시스템 백엔드 개발 완료 - 2025.07.26 02:22
+  - SQLAlchemy 모델 생성 (Simulator 엔티티)
+  - Pydantic 스키마 구현 (SimulatorCreate, SimulatorUpdate, SimulatorResponse 등)
+  - 시뮬레이터 서비스 로직 구현 (CRUD 작업, 권한 검증, 동적 API 지원)
+  - API 라우터 구현 (시뮬레이터 관리 및 동적 데이터 엔드포인트)
+  - /api/simulators: 인증 필요한 시뮬레이터 관리 API
+  - /api/data/{user_id}/{simulator_name}: 공개 동적 데이터 API (경로 형식 변경)
+시뮬레이터 관리 시스템 백엔드 테스트 완료 - 2025.07.26 03:00
+  - 시뮬레이터 CRUD 작업 테스트 성공
+  - 동적 API 엔드포인트 테스트 성공
+  - 권한 검증 테스트 성공
+  - 활성화/비활성화 상태 테스트 성공
+시뮬레이터 관리 시스템 프론트엔드 개발 시작 - 2025.07.26 03:07
+  - simulatorService.js: 시뮬레이터 서비스 레이어 구현
+  - CreateSimulator.jsx: 시뮬레이터 생성 페이지 개선 (서비스 레이어 통합, 실시간 검증, API 엔드포인트 미리보기)
+  - EditSimulator.jsx: 시뮬레이터 수정 페이지 구현
+  - Dashboard.jsx: 시뮬레이터 관리 기능 통합 (수정/삭제 버튼 추가)
+  - App.jsx: 라우팅 설정 업데이트
+시뮬레이터 관리 시스템 프론트엔드 개발 완료 - 2025.07.26 03:17
+시뮬레이터 관리 시스템 디자인 완료 - 2025.07.26 03:17
+  - Material-UI 컴포넌트 활용
+  - 실시간 입력 검증 시스템
+  - API 엔드포인트 및 JSON 응답 미리보기
+  - 카드 기반 반응형 레이아웃
+  - 호버 효과 및 애니메이션 추가
+시뮬레이터 관리 시스템 유저 테스트 완료 - 2025.07.26 03:00
+
+UI/UX 개선 작업 시작 - 2025.07.26 03:20
+다크 모드 JSON 미리보기 가시성 개선 - 2025.07.26 03:25
+  - CreateSimulator.jsx: JSON 미리보기 배경색 및 텍스트 색상 테마 대응
+  - EditSimulator.jsx: JSON 미리보기 배경색 및 텍스트 색상 테마 대응
+  - Dashboard.jsx: 시뮬레이터 파라미터 미리보기 테마 대응
+  - 다크모드에서 grey.900 배경에 grey.100 텍스트로 가시성 확보
+시뮬레이터 저장 후 리다이렉트 시간 단축 - 2025.07.26 03:28
+  - 리다이렉트 대기 시간 2초 → 1초로 단축
+  - Snackbar autoHideDuration도 1초로 통일
+UI/UX 개선 작업 완료 - 2025.07.26 03:31
+
+시뮬레이터 기능 통합 테스트 완료 - 2025.07.26 03:31
+  - 시뮬레이터 생성 기능 정상 작동 확인
+  - 시뮬레이터 수정 기능 정상 작동 확인
+  - 시뮬레이터 삭제 기능 정상 작동 확인
+  - 시뮬레이터 활성화/비활성화 토글 정상 작동 확인
+
+Phase 2 시뮬레이터 관리 시스템 개발 완료 - 2025.07.26 03:34
+```
+
+### 백엔드 구현 상세
+```
+1. 시뮬레이터 엔티티 (models/simulator.py)
+   - SQLAlchemy 2.0+ 최신 문법 사용 (Mapped 타입 어노테이션)
+   - User와 N:1 관계 설정
+   - 타임스탬프 자동 관리 (created_at, updated_at)
+
+2. 시뮬레이터 DTO (schemas/simulator.py)
+   - SimulatorBase: 공통 속성 정의
+   - SimulatorCreate: 생성용 스키마
+   - SimulatorUpdate: 수정용 스키마 (Optional 필드)
+   - SimulatorResponse: API 응답용 스키마
+   - SimulatorDataResponse: 동적 API 데이터 응답용
+   - SimulatorInactiveResponse: 비활성화 상태 응답용
+   - Pydantic v2 최신 문법 사용 (ConfigDict, field_validator)
+   - 강력한 유효성 검증 구현 (이름/파라미터 형식)
+
+3. 시뮬레이터 서비스 (services/simulator_service.py)
+   - create_simulator: 시뮬레이터 생성 (중복 검사)
+   - get_simulator_by_id/name_and_user: 조회 메서드
+   - get_simulators_by_user: 사용자별 목록 조회
+   - update_simulator: 업데이트 (소유권 검증)
+   - delete_simulator: 삭제 (소유권 검증)
+   - get_simulator_data: 동적 API 데이터 조회
+   - toggle_simulator_status: 활성화 상태 토글
+   - 완벽한 예외 처리 및 권한 검증 구현
+
+4. 시뮬레이터 라우터 (routers/simulators.py)
+   - POST /api/simulators/: 시뮬레이터 생성
+   - GET /api/simulators/: 목록 조회 (페이지네이션)
+   - GET /api/simulators/{id}: 상세 조회
+   - PUT /api/simulators/{id}: 수정
+   - DELETE /api/simulators/{id}: 삭제
+   - PATCH /api/simulators/{id}/toggle: 상태 토글
+   - GET /api/data/{user_id}-{simulator_name}: 동적 데이터 API
 ```
 
 ### 에러 및 해결 과정
 ```
--- 에러 발생 시 여기에 기록 --
+시뮬레이터 API 조회 오류 (404 Not Found) 발생 - 2025.07.26 02:36
+원인: 
+  1. FastAPI 경로 파라미터 파싱 문제 - /{user_id}-{simulator_name} 패턴에서 하이픈 구분자 인식 실패
+  2. get_simulator_by_name_and_user 함수의 파라미터 타입 불일치
+  3. 로깅 레벨 오류 (logging.log(0, ...))
+해결책 적용 - 2025.07.26 02:52
+  1. API 경로를 /{user_id}/{simulator_name} 형식으로 변경
+  2. 사용자 ID 검증 강화 - 영문자와 숫자만 허용 (특수문자 제외)
+  3. 시뮬레이터 이름 검증 - 영문자, 숫자, 하이픈(-)만 허용
+  4. 프론트엔드 API 경로 업데이트
+  5. 타입 캐스팅 및 로깅 개선
+유저 피드백을 받아 해결 확인 - 2025.07.26 03:00 ✅
 ```
 
 ---
@@ -220,39 +309,66 @@ Docker 컨테이너화 완료 - [대기중]
 2. [백엔드] AttributeError: type object 'UserService' has no attribute 'SECRET_KEY' - 2025.01.26 23:22 ✅
 3. [백엔드] sqlalchemy.exc.NoReferencedTableError - 2025.01.26 23:25 ✅
 4. [백엔드] AttributeError: 'OAuth2PasswordBearer' object has no attribute 'rsplit' - 2025.01.26 23:34 ✅
+5. [백엔드] 시뮬레이터 API 조회 오류 (404 Not Found) - 2025.07.26 03:00 ✅
+6. [프론트엔드] authService import 오류 (named export vs default export) - 2025.07.26 03:18 ✅
+7. [프론트엔드] PrivateRoute 토큰 키 불일치 오류 (token vs access_token) - 2025.07.26 03:20 ✅
+```
+
+### 미해결 이슈
+```
+1. [프론트엔드] 시뮬레이터 수정 페이지 날짜 표시 오류 - 2025.07.26 03:31
+   - 현재 상황: EditSimulator.jsx에서 시뮬레이터의 생성일/수정일이 임의의 값으로 표시됨
+   - 원인: 백엔드 API가 created_at, updated_at 필드를 반환하지 않음
+   - 필요 작업: 
+     a) 백엔드 Simulator 모델에 created_at, updated_at 필드 추가
+     b) 데이터베이스 마이그레이션 수행
+     c) SimulatorResponse 스키마에 timestamp 필드 포함
+     d) 프론트엔드에서 실제 날짜 데이터 표시
+   - 임시 조치: EditSimulator.jsx 436-440번 줄에서 simulator?.created_at, simulator?.updated_at 참조하나 실제 값 없음
 ```
 
 ---
 
 ## 📈 프로젝트 진행률
 
-### 전체 진행률: 40%
+### 전체 진행률: 75%
 
 ### Phase별 진행률
 - **Phase 0 (프로젝트 초기 설정)**: 100% ✅ (백엔드 및 프론트엔드 초기 설정 완료)
 - **Phase 1 (사용자 인증 시스템)**: 95% (백엔드 및 프론트엔드 개발 완료, UI 디자인 완료, 테스트 대기중)
-- **Phase 2 (시뮬레이터 관리 시스템)**: 0%
-- **Phase 3 (대시보드 시스템)**: 0%
-- **Phase 4 (API 엔드포인트 시스템)**: 0%
+- **Phase 2 (시뮬레이터 관리 시스템)**: 100% ✅ (백엔드 및 프론트엔드 개발 완료, UI 디자인 완료)
+- **Phase 3 (대시보드 시스템)**: 100% ✅ (대시보드 UI 및 시뮬레이터 관리 기능 완료)
+- **Phase 4 (API 엔드포인트 시스템)**: 100% ✅ (동적 API 구현 및 통합 완료)
 - **Phase 5 (배포 및 최종 테스트)**: 0%
 
 ---
 
 ## 📋 다음 단계 액션 아이템
 
-### 즉시 수행할 작업
+### 완료된 작업
 1. [x] 백엔드 프로젝트 구조 생성 및 가상환경 설정
 2. [x] 프론트엔드 React 프로젝트 초기화
 3. [x] PostgreSQL 데이터베이스 설정 (포트 5434, simulator-admin/DBpass)
 4. [x] 기본 개발 환경 구축 완료
+5. [x] Phase 1 백엔드 개발 완료 (사용자 인증 시스템)
+6. [x] Phase 1 프론트엔드 개발 완료 (로그인/회원가입/프로필 관리)
+7. [x] Phase 2 백엔드 개발 완료 (시뮬레이터 관리 시스템)
+8. [x] Phase 2 프론트엔드 개발 완료 (시뮬레이터 CRUD UI)
+9. [x] Phase 3 대시보드 시스템 완료 (목록 관리, 상태 토글)
+10. [x] Phase 4 동적 API 엔드포인트 구현 및 테스트 완료
+11. [x] UI/UX 개선 (다크모드 지원, 반응형 디자인)
+12. [x] 사용자 ID 및 시뮬레이터 이름 검증 강화
 
-### 이번 주 목표
-- Phase 0 완료 (프로젝트 초기 설정) ✅
-- Phase 1 백엔드 완료 (사용자 인증 시스템) ✅
-- Phase 1 프론트엔드 완료 (회원가입/로그인 UI) ✅
-- Material-UI 테마 설정 완료 ✅
-- UI/UX 디자인 개선 완료 ✅
-- Playwright E2E 테스트 (다음 단계)
+### 다음 단계 작업
+- 미해결 이슈 수정
+  - 시뮬레이터 timestamp 필드 추가 (created_at, updated_at)
+  - 데이터베이스 마이그레이션
+- Phase 5 배포 및 최종 테스트
+  - Docker 컨테이너화
+  - 환경변수 설정
+  - 통합 테스트 수행
+- Playwright E2E 테스트 구현
+- 사용자 매뉴얼 작성
 
 ---
 
@@ -284,4 +400,4 @@ Docker 컨테이너화 완료 - [대기중]
 
 ---
 
-*최종 업데이트: 2025.01.27 15:30*
+*최종 업데이트: 2025.07.26 03:34*

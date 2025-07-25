@@ -98,15 +98,38 @@ frontend/
 │   │   ├── auth/
 │   │   └── simulator/
 │   ├── pages/
-│   │   ├── Login.js
-│   │   ├── Register.js
-│   │   └── Dashboard.js
+│   │   ├── Login.jsx
+│   │   ├── Register.jsx
+│   │   └── Dashboard.jsx
 │   ├── services/
 │   │   └── api.js
 │   ├── utils/
-│   └── App.js
+│   └── App.jsx
 ├── public/
 └── package.json
+```
+
+## 🎯 프론트엔드 개발 유의사항
+
+### 파일 확장자 규칙
+- **`.js` 파일**: 순수 JavaScript 파일 (유틸리티, 서비스, 설정 파일)에만 사용
+- **`.jsx` 파일**: React 컴포넌트 (JSX 문법 포함) 파일에만 사용
+
+### JSX 문법 규칙
+- **JSX 문법 금지**: `.js` 파일에서는 JSX 문법을 절대 사용하지 않음
+- **JSX 문법 허용**: `.jsx` 파일에서만 JSX 문법 사용 가능
+- **컴포넌트 생성**: 모든 React 컴포넌트는 `.jsx` 확장자로 생성
+
+### 예시
+```
+✅ 올바른 사용:
+- components/auth/Login.jsx (JSX 문법 포함)
+- services/api.js (순수 JavaScript, JSX 없음)
+- utils/helpers.js (순수 JavaScript, JSX 없음)
+
+❌ 잘못된 사용:
+- components/auth/Login.js (JSX 문법 포함하면 안됨)
+- services/api.jsx (JSX 문법이 없는데 .jsx 사용)
 ```
 
 ---
@@ -183,7 +206,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 ### 1.2 프론트엔드 개발
 
-#### 로그인 컴포넌트 (components/auth/Login.js)
+#### 로그인 컴포넌트 (components/auth/Login.jsx)
 ```jsx
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, Paper } from '@mui/material';
@@ -244,7 +267,7 @@ const Login = () => {
 export default Login;
 ```
 
-#### 회원가입 컴포넌트 (components/auth/Register.js)
+#### 회원가입 컴포넌트 (components/auth/Register.jsx)
 ```jsx
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, Paper } from '@mui/material';
@@ -434,7 +457,7 @@ def update_simulator(simulator_id: int, simulator: SimulatorUpdate, db: Session 
 
 ### 2.2 프론트엔드 개발
 
-#### 시뮬레이터 생성 컴포넌트 (components/simulator/CreateSimulator.js)
+#### 시뮬레이터 생성 컴포넌트 (components/simulator/CreateSimulator.jsx)
 ```jsx
 import React, { useState } from 'react';
 import { 
@@ -593,7 +616,7 @@ export default CreateSimulator;
 
 ### 3.2 프론트엔드 개발
 
-#### 대시보드 컴포넌트 (pages/Dashboard.js)
+#### 대시보드 컴포넌트 (pages/Dashboard.jsx)
 ```jsx
 import React, { useState, useEffect } from 'react';
 import {

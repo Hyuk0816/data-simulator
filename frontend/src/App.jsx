@@ -5,8 +5,9 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 // Pages
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
-// import Dashboard from './pages/Dashboard.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 import CreateSimulator from './pages/CreateSimulator.jsx';
+import EditSimulator from './pages/EditSimulator.jsx';
 import Profile from './pages/Profile.jsx';
 
 // Components
@@ -37,7 +38,7 @@ function App() {
             path="/dashboard"
             element={
               <PrivateRoute>
-                {/*<Dashboard darkMode={darkMode} setDarkMode={setDarkMode} />*/}
+                <Dashboard darkMode={darkMode} setDarkMode={setDarkMode} />
               </PrivateRoute>
             }
           />
@@ -46,6 +47,14 @@ function App() {
             element={
               <PrivateRoute>
                 <CreateSimulator />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/edit-simulator/:id"
+            element={
+              <PrivateRoute>
+                <EditSimulator />
               </PrivateRoute>
             }
           />

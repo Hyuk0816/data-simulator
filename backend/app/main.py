@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from .database import engine, Base
 from .models import user, simulator
-from .routers import auth, users
+from .routers import auth, users, simulators
 
 # 환경변수 로드
 load_dotenv()
@@ -44,7 +44,8 @@ app.add_middleware(
 # 라우터 등록
 app.include_router(auth.router)
 app.include_router(users.router)
-# app.include_router(simulators.router, prefix="/api/simulators", tags=["simulators"])
+app.include_router(simulators.router)
+app.include_router(simulators.data_router)
 
 @app.get("/")
 async def root():

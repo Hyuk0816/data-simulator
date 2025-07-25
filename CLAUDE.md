@@ -152,6 +152,13 @@ When errors occur, document in `develop-work-report.md`:
 - **Axios**: HTTP client for API calls
 - **React Router**: Client-side routing
 
+### Frontend Development Guidelines
+- **File Extension Rules**: 
+  - Pure JavaScript files (utilities, services, configs): Use `.js` extension
+  - React components with JSX: Use `.jsx` extension
+- **JSX Syntax**: Only allowed in `.jsx` files - strictly prohibited in `.js` files
+- **Component Structure**: All React components must be created as `.jsx` files
+
 ### Database
 - **PostgreSQL**: Primary database with JSONB support for parameter storage
 - Environment variables for connection: `DB_USER`, `DB_PASSWORD`, `DB_PORT`

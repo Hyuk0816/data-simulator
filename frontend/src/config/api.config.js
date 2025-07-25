@@ -21,7 +21,7 @@ const API_CONFIG = {
     SIMULATORS: {
       BASE: '/api/simulators',
       BY_ID: (id) => `/api/simulators/${id}`,
-      DATA: (userId, simName) => `/api/data/${userId}-${simName}`
+      DATA: (userId, simName) => `/api/data/${userId}/${simName}`
     }
   },
   

@@ -37,10 +37,10 @@ class UserCreate(UserBase):
     @field_validator('user_id')
     @classmethod
     def validate_user_id(cls, v: str) -> str:
-        """user_id 형식 검증 - 영문자, 숫자, 언더스코어만 허용"""
+        """user_id 형식 검증 - 영문자, 숫자만 허용 (특수문자 제외)"""
         import re
-        if not re.match(r'^[a-zA-Z0-9_]+$', v):
-            raise ValueError('사용자 ID는 영문자, 숫자, 언더스코어(_)만 포함할 수 있습니다')
+        if not re.match(r'^[a-zA-Z0-9]+$', v):
+            raise ValueError('사용자 ID는 영문자와 숫자만 포함할 수 있습니다. 특수문자는 사용할 수 없습니다.')
         return v.lower()  # 일관성을 위해 소문자로 변환
 
     model_config = ConfigDict(
@@ -79,8 +79,8 @@ class UserUpdate(BaseModel):
         """user_id 변경 시 형식 검증"""
         if v is not None:
             import re
-            if not re.match(r'^[a-zA-Z0-9_]+$', v):
-                raise ValueError('사용자 ID는 영문자, 숫자, 언더스코어(_)만 포함할 수 있습니다')
+            if not re.match(r'^[a-zA-Z0-9]+$', v):
+                raise ValueError('사용자 ID는 영문자와 숫자만 포함할 수 있습니다. 특수문자는 사용할 수 없습니다.')
             return v.lower()
         return v
 

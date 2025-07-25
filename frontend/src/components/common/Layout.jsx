@@ -22,7 +22,7 @@ import {
   Logout as LogoutIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../../services/authService';
+import authService from '../../services/authService';
 
 const Layout = ({ children, darkMode, setDarkMode, title = 'Dynamic API Simulator' }) => {
   const navigate = useNavigate();

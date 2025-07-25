@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     Box, 
     TextField, 
@@ -10,11 +10,13 @@ import {
     Container,
     Alert,
     Snackbar,
-    FormHelperText,
     Chip,
     Divider,
     Card,
-    CardContent
+    CardContent,
+    CircularProgress,
+    Switch,
+    FormControlLabel
 } from '@mui/material';
 import { 
     Add as AddIcon, 
@@ -22,21 +24,52 @@ import {
     Save as SaveIcon,
     Cancel as CancelIcon,
     Api as ApiIcon,
-    Code as CodeIcon
+    Code as CodeIcon,
+    Edit as EditIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import simulatorService from '../services/simulatorService';
 import Layout from '../components/common/Layout';
 
-const CreateSimulator = () => {
+const EditSimulator = () => {
+    const { id } = useParams();
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [simulator, setSimulator] = useState(null);
     const [name, setName] = useState('');
     const [parameters, setParameters] = useState([{ key: '', value: '' }]);
+    const [isActive, setIsActive] = useState(true);
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [nameError, setNameError] = useState('');
     const [parameterErrors, setParameterErrors] = useState({});
+
+    // 시뮬레이터 데이터 로드
+    useEffect(() => {
+        loadSimulator();
+    }, [id]);
+
+    const loadSimulator = async () => {
+        try {
+            const data = await simulatorService.getSimulator(id);
+            setSimulator(data);
+            setName(data.name);
+            setIsActive(data.is_active);
+            
+            // 파라미터를 배열 형태로 변환
+            const paramArray = Object.entries(data.parameters).map(([key, value]) => ({
+                key,
+                value: value.toString()
+            }));
+            setParameters(paramArray.length > 0 ? paramArray : [{ key: '', value: '' }]);
+            
+        } catch (error) {
+            setError(error.message || '시뮬레이터를 불러올 수 없습니다.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // 이름 검증
     const validateName = (value) => {
@@ -124,16 +157,32 @@ const CreateSimulator = () => {
             return;
         }
 
-        setLoading(true);
+        setSaving(true);
 
         try {
-            const newSimulator = await simulatorService.createSimulator({
+            const updateData = {
                 name,
                 parameters: parameterObj,
-                is_active: true
-            });
+                is_active: isActive
+            };
             
-            setSuccessMessage('시뮬레이터가 성공적으로 생성되었습니다!');
+            // 변경된 필드만 업데이트
+            const changedData = {};
+            if (name !== simulator.name) changedData.name = name;
+            if (JSON.stringify(parameterObj) !== JSON.stringify(simulator.parameters)) {
+                changedData.parameters = parameterObj;
+            }
+            if (isActive !== simulator.is_active) changedData.is_active = isActive;
+            
+            if (Object.keys(changedData).length === 0) {
+                setSuccessMessage('변경사항이 없습니다.');
+                setSaving(false);
+                return;
+            }
+            
+            await simulatorService.updateSimulator(id, changedData);
+            
+            setSuccessMessage('시뮬레이터가 성공적으로 수정되었습니다!');
             
             // 1초 후 대시보드로 이동
             setTimeout(() => {
@@ -141,9 +190,9 @@ const CreateSimulator = () => {
             }, 1000);
             
         } catch (error) {
-            setError(error.message || '시뮬레이터 생성에 실패했습니다.');
+            setError(error.message || '시뮬레이터 수정에 실패했습니다.');
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
 
@@ -164,12 +213,22 @@ const CreateSimulator = () => {
         return JSON.stringify(preview, null, 2);
     };
 
+    if (loading) {
+        return (
+            <Layout>
+                <Container sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                    <CircularProgress />
+                </Container>
+            </Layout>
+        );
+    }
+
     return (
         <Layout>
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                 <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 4 }}>
-                    <ApiIcon sx={{ mr: 1, verticalAlign: 'bottom' }} />
-                    새 시뮬레이터 만들기
+                    <EditIcon sx={{ mr: 1, verticalAlign: 'bottom' }} />
+                    시뮬레이터 수정
                 </Typography>
                 
                 {error && (
@@ -200,6 +259,27 @@ const CreateSimulator = () => {
                                         pattern: "[a-zA-Z0-9-]+",
                                         maxLength: 255
                                     }}
+                                />
+                                
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={isActive}
+                                            onChange={(e) => setIsActive(e.target.checked)}
+                                            color="primary"
+                                        />
+                                    }
+                                    label={
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            활성화 상태
+                                            <Chip 
+                                                label={isActive ? "활성" : "비활성"} 
+                                                color={isActive ? "success" : "default"}
+                                                size="small"
+                                            />
+                                        </Box>
+                                    }
+                                    sx={{ mt: 2 }}
                                 />
                                 
                                 <Divider sx={{ my: 3 }} />
@@ -267,10 +347,10 @@ const CreateSimulator = () => {
                                     <Button
                                         type="submit"
                                         variant="contained"
-                                        disabled={loading}
+                                        disabled={saving}
                                         startIcon={<SaveIcon />}
                                     >
-                                        {loading ? '생성 중...' : '시뮬레이터 생성'}
+                                        {saving ? '저장 중...' : '변경사항 저장'}
                                     </Button>
                                 </Box>
                             </Box>
@@ -283,28 +363,22 @@ const CreateSimulator = () => {
                             <CardContent>
                                 <Typography variant="h6" gutterBottom>
                                     <CodeIcon sx={{ mr: 1, verticalAlign: 'bottom' }} />
-                                    API 엔드포인트 미리보기
+                                    API 엔드포인트
                                 </Typography>
-                                {previewEndpoint ? (
-                                    <>
-                                        <TextField
-                                            fullWidth
-                                            value={previewEndpoint}
-                                            margin="normal"
-                                            InputProps={{
-                                                readOnly: true,
-                                            }}
-                                            size="small"
-                                        />
-                                        <Typography variant="caption" color="text.secondary">
-                                            GET 요청으로 아래 JSON 데이터를 받을 수 있습니다.
-                                        </Typography>
-                                    </>
-                                ) : (
-                                    <Typography variant="body2" color="text.secondary">
-                                        시뮬레이터 이름을 입력하면 엔드포인트가 표시됩니다.
-                                    </Typography>
-                                )}
+                                <TextField
+                                    fullWidth
+                                    value={previewEndpoint}
+                                    margin="normal"
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
+                                    size="small"
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                    {isActive 
+                                        ? 'GET 요청으로 아래 JSON 데이터를 받을 수 있습니다.'
+                                        : '비활성화 상태에서는 비활성화 메시지가 반환됩니다.'}
+                                </Typography>
                             </CardContent>
                         </Card>
                         
@@ -313,27 +387,57 @@ const CreateSimulator = () => {
                                 <Typography variant="h6" gutterBottom>
                                     JSON 응답 미리보기
                                 </Typography>
-                                <Box
-                                    sx={{
-                                        bgcolor: (theme) => theme.palette.mode === 'dark' 
-                                            ? 'grey.900' 
-                                            : 'grey.100',
-                                        color: (theme) => theme.palette.mode === 'dark' 
-                                            ? 'grey.100' 
-                                            : 'grey.900',
-                                        p: 2,
-                                        borderRadius: 1,
-                                        fontFamily: 'monospace',
-                                        fontSize: '0.875rem',
-                                        overflow: 'auto',
-                                        maxHeight: 300,
-                                        border: (theme) => `1px solid ${theme.palette.divider}`
-                                    }}
-                                >
-                                    <pre style={{ margin: 0, color: 'inherit' }}>
-                                        {getPreviewJson() || '{}'}
-                                    </pre>
-                                </Box>
+                                {isActive ? (
+                                    <Box
+                                        sx={{
+                                            bgcolor: (theme) => theme.palette.mode === 'dark' 
+                                                ? 'grey.900' 
+                                                : 'grey.100',
+                                            color: (theme) => theme.palette.mode === 'dark' 
+                                                ? 'grey.100' 
+                                                : 'grey.900',
+                                            p: 2,
+                                            borderRadius: 1,
+                                            fontFamily: 'monospace',
+                                            fontSize: '0.875rem',
+                                            overflow: 'auto',
+                                            maxHeight: 300,
+                                            border: (theme) => `1px solid ${theme.palette.divider}`
+                                        }}
+                                    >
+                                        <pre style={{ margin: 0, color: 'inherit' }}>
+                                            {getPreviewJson() || '{}'}
+                                        </pre>
+                                    </Box>
+                                ) : (
+                                    <Box
+                                        sx={{
+                                            bgcolor: 'error.light',
+                                            p: 2,
+                                            borderRadius: 1,
+                                            fontFamily: 'monospace',
+                                            fontSize: '0.875rem',
+                                        }}
+                                    >
+                                        <pre style={{ margin: 0 }}>
+{`{
+  "message": "해당 시뮬레이터는 비활성화 상태 입니다."
+}`}
+                                        </pre>
+                                    </Box>
+                                )}
+                            </CardContent>
+                        </Card>
+                        
+                        {/* 시뮬레이터 정보 */}
+                        <Card sx={{ mt: 3 }}>
+                            <CardContent>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    생성일: {new Date(simulator?.created_at).toLocaleString('ko-KR')}
+                                </Typography>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    수정일: {new Date(simulator?.updated_at).toLocaleString('ko-KR')}
+                                </Typography>
                             </CardContent>
                         </Card>
                     </Grid>
@@ -355,4 +459,4 @@ const CreateSimulator = () => {
     );
 };
 
-export default CreateSimulator;
+export default EditSimulator;
