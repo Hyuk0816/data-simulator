@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 데이터베이스 서비스
+  db:
+    image: postgres:15-alpine
+    container_name: simulator_db
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_DB: ${DB_NAME:-simulator_db}
+      POSTGRES_USER: ${DB_USER:-simulator-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-DBpass}
+    ports:
+      - "${DB_PORT:-5434}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-simulator-admin} -d ${DB_NAME:-simulator_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local

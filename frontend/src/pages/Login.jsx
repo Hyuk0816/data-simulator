@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Paper, Link, Alert } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, TextField, Button, Typography, Paper, Link, Alert, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import authService from '../services/authService';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -11,6 +11,19 @@ const Login = () => {
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // 이미 로그인된 사용자 체크
+    useEffect(() => {
+        const checkAuthStatus = async () => {
+            if (authService.isAuthenticated()) {
+                const user = await authService.checkAuthStatus();
+                if (user) {
+                    navigate('/dashboard');
+                }
+            }
+        };
+        checkAuthStatus();
+    }, [navigate]);
 
     const handleChange = (e) => {
         setFormData({
@@ -26,19 +39,15 @@ const Login = () => {
         setError('');
 
         try {
-            const response = await axios.post('http://localhost:8000/api/auth/login', formData);
+            const result = await authService.login(formData);
             
-            // JWT 토큰을 localStorage에 저장
-            localStorage.setItem('token', response.data.access_token);
-            localStorage.setItem('user_id', formData.user_id);
+            // 로그인 성공 메시지 (선택사항)
+            console.log('로그인 성공:', result.user.name);
             
             // 대시보드로 이동
             navigate('/dashboard');
         } catch (error) {
-            setError(
-                error.response?.data?.detail || 
-                '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.'
-            );
+            setError(error.message);
         } finally {
             setLoading(false);
         }
@@ -51,13 +60,29 @@ const Login = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#f5f5f5'
+                backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
             }}
         >
-            <Paper elevation={3} sx={{ p: 4, maxWidth: 400, width: '100%', mx: 2 }}>
-                <Typography variant="h4" component="h1" gutterBottom align="center">
-                    로그인
-                </Typography>
+            <Paper 
+                elevation={3} 
+                sx={{ 
+                    p: 4, 
+                    maxWidth: 400, 
+                    width: '100%', 
+                    mx: 2,
+                    borderRadius: 2,
+                    backdropFilter: 'blur(10px)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)'
+                }}
+            >
+                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                    <Typography variant="h4" component="h1" fontWeight={600} gutterBottom>
+                        로그인
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Dynamic API Simulator에 오신 것을 환영합니다
+                    </Typography>
+                </Box>
                 
                 {error && (
                     <Alert severity="error" sx={{ mb: 2 }}>
@@ -92,6 +117,7 @@ const Login = () => {
                         variant="contained"
                         sx={{ mt: 3, mb: 2 }}
                         disabled={loading}
+                        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                     >
                         {loading ? '로그인 중...' : '로그인'}
                     </Button>

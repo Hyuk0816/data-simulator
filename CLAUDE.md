@@ -97,6 +97,11 @@ All development progress must be recorded in `develop-work-report.md` with times
 [기능명] 유저 테스트 완료 - YYYY.MM.DD HH:MM
 ```
 
+**IMPORTANT**: When recording timestamps in work reports, you must first execute the `date` command to get the current time. Do NOT use arbitrary or estimated times. Always use the actual system time:
+```bash
+date "+%Y.%m.%d %H:%M"
+```
+
 ### Error Handling
 When errors occur, document in `develop-work-report.md`:
 ```

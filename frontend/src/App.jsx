@@ -1,45 +1,30 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 
 // Pages
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import CreateSimulator from './pages/CreateSimulator';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+// import Dashboard from './pages/Dashboard.jsx';
+import CreateSimulator from './pages/CreateSimulator.jsx';
+import Profile from './pages/Profile.jsx';
 
 // Components
-import PrivateRoute from './components/common/PrivateRoute';
+import PrivateRoute from './components/common/PrivateRoute.jsx';
 
-// Create MUI theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-  typography: {
-    fontFamily: [
-      '-apple-system',
-      'BlinkMacSystemFont',
-      '"Segoe UI"',
-      'Roboto',
-      '"Helvetica Neue"',
-      'Arial',
-      'sans-serif',
-      '"Apple Color Emoji"',
-      '"Segoe UI Emoji"',
-      '"Segoe UI Symbol"',
-    ].join(','),
-  },
-});
+// Theme
+import theme from './theme';
+import darkTheme from './theme/darkTheme';
 
 function App() {
+  const [darkMode, setDarkMode] = useState(false);
+  
+  const currentTheme = useMemo(() => {
+    return darkMode ? darkTheme : theme;
+  }, [darkMode]);
+
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={currentTheme}>
       <CssBaseline />
       <Router>
         <Routes>
@@ -52,7 +37,7 @@ function App() {
             path="/dashboard"
             element={
               <PrivateRoute>
-                <Dashboard />
+                {/*<Dashboard darkMode={darkMode} setDarkMode={setDarkMode} />*/}
               </PrivateRoute>
             }
           />
@@ -61,6 +46,14 @@ function App() {
             element={
               <PrivateRoute>
                 <CreateSimulator />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <Profile />
               </PrivateRoute>
             }
           />
