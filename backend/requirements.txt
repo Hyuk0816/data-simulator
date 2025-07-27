@@ -9,3 +9,6 @@ bcrypt
 python-multipart
 alembic
 python-dotenv
+pandas
+openpyxl
+xlrd
