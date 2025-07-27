@@ -12,6 +12,8 @@ services:
       POSTGRES_DB: ${DB_NAME:-simulator_db}
       POSTGRES_USER: ${DB_USER:-simulator-admin}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-DBpass}
+      TZ: Asia/Seoul
+      PGTZ: Asia/Seoul
     ports:
       - "${DB_PORT:-5434}:5432"
     volumes:
