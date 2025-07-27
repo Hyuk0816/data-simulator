@@ -20,6 +20,7 @@ class Simulator(Base):
     # 시뮬레이터 정보
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     parameters: Mapped[str] = mapped_column(Text, nullable=False)  # JSON 문자열로 저장
+    parameter_config: Mapped[str] = mapped_column(Text, nullable=True, default='{}')  # 파라미터 설정 JSON
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     
     # 타임스탬프

@@ -1,14 +1,47 @@
 from pydantic import BaseModel, Field, field_validator, ConfigDict
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Literal
 from datetime import datetime
 import json
 import re
+
+
+class ParameterConfig(BaseModel):
+    """파라미터 설정 스키마 - 랜덤 값 생성을 위한 메타데이터"""
+    is_random: bool = Field(default=False, description="랜덤 값 생성 여부")
+    type: Optional[Literal["integer", "float", "string"]] = Field(default=None, description="값 타입")
+    min: Optional[float] = Field(default=None, description="최소값 (숫자 타입용)")
+    max: Optional[float] = Field(default=None, description="최대값 (숫자 타입용)")
+    
+    @field_validator('min', 'max')
+    @classmethod
+    def validate_range(cls, v: Optional[float], info) -> Optional[float]:
+        """범위 값 검증"""
+        if v is not None and info.data.get('is_random') and info.data.get('type') in ['integer', 'float']:
+            return v
+        return v
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "is_random": True,
+                    "type": "float",
+                    "min": 10.0,
+                    "max": 25.0
+                },
+                {
+                    "is_random": False
+                }
+            ]
+        }
+    )
 
 
 class SimulatorBase(BaseModel):
     """기본 시뮬레이터 스키마 - 공통 속성 정의"""
     name: str = Field(..., min_length=1, max_length=255, description="시뮬레이터 이름")
     parameters: Dict[str, Any] = Field(..., description="시뮬레이터 파라미터 (JSON 형태)")
+    parameter_config: Optional[Dict[str, ParameterConfig]] = Field(default_factory=dict, description="파라미터 설정 (랜덤 값 생성용)")
     is_active: bool = Field(default=True, description="시뮬레이터 활성화 상태")
 
     @field_validator('name')
@@ -142,6 +175,7 @@ class SimulatorResponse(BaseModel):
     user_id: int
     name: str
     parameters: Dict[str, Any]
+    parameter_config: Optional[Dict[str, ParameterConfig]] = Field(default_factory=dict)
     is_active: bool
     created_at: datetime
     updated_at: datetime

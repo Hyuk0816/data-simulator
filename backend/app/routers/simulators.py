@@ -2,8 +2,8 @@
 시뮬레이터 관련 API 라우터 - CRUD 및 동적 API 엔드포인트
 """
 import logging
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
+from typing import List, Optional, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, status, Path, Query, UploadFile, File
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -17,6 +17,7 @@ from ..schemas.simulator import (
 from ..services.simulator_service import SimulatorService
 from ..models.user import User
 from ..utils.auth import get_current_user
+from ..utils.file_parser import FileParser
 
 
 router = APIRouter(
@@ -222,6 +223,43 @@ async def toggle_simulator_status(
         )
 
 
+@router.post("/upload", response_model=List[str], summary="CSV/Excel 파일 업로드 및 컬럼명 추출")
+async def upload_file_for_parameters(
+    file: UploadFile = File(..., description="CSV 또는 Excel 파일"),
+    current_user: User = Depends(get_current_user)
+) -> List[str]:
+    """
+    CSV/Excel 파일을 업로드하여 컬럼명(파라미터 키)을 추출합니다.
+    
+    - 지원 형식: .csv, .xlsx, .xls
+    - 최대 파일 크기: 10MB
+    - 첫 번째 행을 헤더로 자동 인식 (지능형 알고리즘 사용)
+    
+    **헤더 인식 알고리즘:**
+    - 모든 요소가 문자열이어야 함 (순수 숫자 제외)
+    - 중복된 요소가 없어야 함
+    - 빈 값이 없어야 함
+    - 영문자 또는 한글이 포함되어야 함
+    
+    **응답 예시:**
+    ```json
+    ["water_qty", "saving", "depth_data"]
+    ```
+    """
+    try:
+        headers = await FileParser.parse_file(file)
+        return headers
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"파일 업로드 처리 중 오류: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="파일 처리 중 예상치 못한 오류가 발생했습니다"
+        )
+
+
 # 동적 API 엔드포인트 라우터
 data_router = APIRouter(
     prefix="/api/data",
@@ -239,22 +277,20 @@ async def get_simulator_data(
     """
     시뮬레이터의 설정된 파라미터 데이터를 반환합니다.
     
-    - 활성화된 시뮬레이터: 설정된 JSON 파라미터를 반환
+    - 활성화된 시뮬레이터: 설정된 JSON 파라미터만 반환 (메타데이터 없음)
     - 비활성화된 시뮬레이터: 비활성화 메시지를 반환
     
     인증 없이 공개적으로 접근 가능한 엔드포인트입니다.
     
     예시: /api/data/rlawogur816/ocean-data-simulator
+    응답 예시 (활성화): {"depth_data": 25, "water_quality": 30, "tool": "test"}
+    응답 예시 (비활성화): {"message": "해당 시뮬레이터는 비활성화 상태 입니다."}
     """
     try:
         result = SimulatorService.get_simulator_data(db, user_id, simulator_name)
         
-        if result["type"] == "inactive":
-            # 비활성화 상태 - 메시지와 함께 200 OK 반환
-            return result["data"]
-        else:
-            # 활성화 상태 - 데이터 반환
-            return result["data"]
+        # type 정보 없이 data만 직접 반환
+        return result["data"]
     
     except ValueError as e:
         raise HTTPException(

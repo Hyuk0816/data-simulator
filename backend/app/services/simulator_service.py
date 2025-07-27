@@ -2,6 +2,7 @@
 시뮬레이터 서비스 - 시뮬레이터 CRUD 및 동적 API 관리 비즈니스 로직
 """
 import logging
+import random
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
@@ -15,7 +16,8 @@ from ..schemas.simulator import (
     SimulatorUpdate, 
     SimulatorResponse,
     SimulatorDataResponse,
-    SimulatorInactiveResponse
+    SimulatorInactiveResponse,
+    ParameterConfig
 )
 
 
@@ -35,11 +37,18 @@ class SimulatorService:
         # 파라미터를 JSON 문자열로 변환
         parameters_json = json.dumps(simulator_create.parameters, ensure_ascii=False)
         
+        # parameter_config를 JSON 문자열로 변환
+        parameter_config_json = json.dumps(
+            {k: v.model_dump() for k, v in (simulator_create.parameter_config or {}).items()}, 
+            ensure_ascii=False
+        )
+        
         # 시뮬레이터 생성
         db_simulator = Simulator(
             user_id=user_id,
             name=simulator_create.name,
             parameters=parameters_json,
+            parameter_config=parameter_config_json,
             is_active=simulator_create.is_active
         )
         
@@ -129,6 +138,13 @@ class SimulatorService:
         if "parameters" in update_data and update_data["parameters"] is not None:
             update_data["parameters"] = json.dumps(update_data["parameters"], ensure_ascii=False)
         
+        # parameter_config 업데이트 시 JSON 문자열로 변환
+        if "parameter_config" in update_data and update_data["parameter_config"] is not None:
+            update_data["parameter_config"] = json.dumps(
+                {k: v.model_dump() for k, v in update_data["parameter_config"].items()}, 
+                ensure_ascii=False
+            )
+        
         # 업데이트 적용
         for field, value in update_data.items():
             setattr(db_simulator, field, value)
@@ -184,29 +200,52 @@ class SimulatorService:
         
         # 활성화 상태 확인
         if not simulator.is_active:
-            # 비활성화 상태 응답
+            # 비활성화 상태 응답 - 메시지만 반환
             return {
                 "type": "inactive",
-                "data": SimulatorInactiveResponse(
-                    simulator_name=simulator_name,
-                    user_id=user_id_str
-                ).model_dump()
+                "data": {"message": "해당 시뮬레이터는 비활성화 상태 입니다."}
             }
         
-        # 활성화 상태 - 파라미터 데이터 반환
+        # 활성화 상태 - 파라미터 데이터 처리 (랜덤 값 생성 포함)
         try:
             parameters = json.loads(simulator.parameters)
+            parameter_config = json.loads(simulator.parameter_config or '{}')
         except json.JSONDecodeError:
             raise ValueError("시뮬레이터 파라미터 파싱 오류가 발생했습니다.")
         
+        # 랜덤 값 생성 처리
+        result_parameters = SimulatorService._generate_random_values(parameters, parameter_config)
+        
         return {
             "type": "active",
-            "data": SimulatorDataResponse(
-                data=parameters,
-                simulator_name=simulator_name,
-                user_id=user_id_str
-            ).model_dump()
+            "data": result_parameters
         }
+    
+    @staticmethod
+    def _generate_random_values(parameters: Dict[str, Any], parameter_config: Dict[str, Any]) -> Dict[str, Any]:
+        """파라미터 설정에 따라 랜덤 값을 생성
+        
+        Args:
+            parameters: 원본 파라미터 값들
+            parameter_config: 랜덤 생성 설정
+            
+        Returns:
+            랜덤 값이 적용된 파라미터
+        """
+        result = parameters.copy()
+        
+        for param_name, config in parameter_config.items():
+            if param_name in result and config.get('is_random', False):
+                param_type = config.get('type')
+                min_val = config.get('min')
+                max_val = config.get('max')
+                
+                # 모든 랜덤 값을 실수로 반환
+                if min_val is not None and max_val is not None:
+                    result[param_name] = round(random.uniform(min_val, max_val), 2)
+                # string 타입은 향후 확장 가능
+        
+        return result
     
     @staticmethod
     def toggle_simulator_status(db: Session, simulator_id: int, user_id: int) -> Optional[Simulator]:
@@ -239,11 +278,17 @@ class SimulatorService:
         except json.JSONDecodeError:
             parameters = {}
         
+        try:
+            parameter_config = json.loads(simulator.parameter_config or '{}')
+        except json.JSONDecodeError:
+            parameter_config = {}
+        
         return {
             "id": simulator.id,
             "user_id": simulator.user_id,
             "name": simulator.name,
             "parameters": parameters,
+            "parameter_config": parameter_config,
             "is_active": simulator.is_active,
             "created_at": simulator.created_at,
             "updated_at": simulator.updated_at
