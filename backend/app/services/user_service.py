@@ -160,3 +160,17 @@ class UserService:
         db.delete(db_user)
         db.commit()
         return True
+    
+    @staticmethod
+    def check_user_id_availability(db: Session, user_id: str) -> bool:
+        """사용자 ID 사용 가능 여부 확인
+        
+        Args:
+            db: 데이터베이스 세션
+            user_id: 확인할 사용자 ID
+            
+        Returns:
+            True: 사용 가능, False: 이미 사용 중
+        """
+        existing_user = UserService.get_user_by_user_id(db, user_id)
+        return existing_user is None

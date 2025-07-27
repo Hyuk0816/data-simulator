@@ -119,3 +119,46 @@ async def read_users_me(
         created_at=current_user.created_at,
         updated_at=current_user.updated_at
     )
+
+
+@router.get("/check-id/{user_id}", summary="사용자 ID 중복 확인")
+async def check_user_id(
+    user_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    사용자 ID 중복 확인 엔드포인트
+    
+    - **user_id**: 확인할 사용자 ID
+    
+    Returns:
+        - **available**: 사용 가능 여부 (true: 사용 가능, false: 이미 사용 중)
+        - **message**: 결과 메시지
+    """
+    # 유효성 검사
+    import re
+    if not re.match(r'^[a-zA-Z0-9_]+$', user_id):
+        return {
+            "available": False,
+            "message": "사용자 ID는 영문자, 숫자, 언더스코어(_)만 포함할 수 있습니다."
+        }
+    
+    if len(user_id) < 3 or len(user_id) > 50:
+        return {
+            "available": False,
+            "message": "사용자 ID는 3자 이상 50자 이하여야 합니다."
+        }
+    
+    # 중복 확인
+    is_available = UserService.check_user_id_availability(db, user_id)
+    
+    if is_available:
+        return {
+            "available": True,
+            "message": "사용 가능한 ID입니다."
+        }
+    else:
+        return {
+            "available": False,
+            "message": "이미 사용 중인 ID입니다."
+        }
