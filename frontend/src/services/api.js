@@ -89,6 +89,9 @@ export const authAPI = {
     
     // 현재 사용자 정보 조회
     getMe: () => api.get('/api/auth/me'),
+    
+    // 사용자 ID 중복 확인
+    checkUserId: (userId) => api.get(`/api/auth/check-id/${userId}`),
 };
 
 // User API
@@ -130,6 +133,19 @@ export const simulatorAPI = {
     // 시뮬레이터 데이터 조회 (공개 API)
     getSimulatorData: (userId, simulatorName) => 
         axios.get(`${API_BASE_URL}/api/data/${userId}/${simulatorName}`),
+    
+    // CSV/Excel 파일 업로드하여 컬럼명 추출
+    uploadFile: async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await api.post('/api/simulators/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
 };
 
 export default api;
