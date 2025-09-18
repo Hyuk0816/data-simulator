@@ -19,7 +19,8 @@ import {
   AccountCircle,
   Dashboard as DashboardIcon,
   Add as AddIcon,
-  Logout as LogoutIcon
+  Logout as LogoutIcon,
+  Warning as WarningIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import authService from '../../services/authService';
@@ -53,6 +54,10 @@ const Layout = ({ children, darkMode, setDarkMode, title = 'Dynamic API Simulato
 
   const handleCreateClick = () => {
     navigate('/create-simulator');
+  };
+
+  const handleFailureScenariosClick = () => {
+    navigate('/failure-scenarios');
   };
 
   return (
@@ -98,6 +103,19 @@ const Layout = ({ children, darkMode, setDarkMode, title = 'Dynamic API Simulato
             >
               <AddIcon />
               <Typography variant="caption">생성</Typography>
+            </IconButton>
+
+            <IconButton
+              color="inherit"
+              onClick={handleFailureScenariosClick}
+              sx={{ 
+                display: { xs: 'none', sm: 'flex' },
+                flexDirection: 'column',
+                gap: 0.5
+              }}
+            >
+              <WarningIcon />
+              <Typography variant="caption">고장 시나리오</Typography>
             </IconButton>
           </Box>
 

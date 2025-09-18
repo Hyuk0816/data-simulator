@@ -2,12 +2,12 @@ version: '3.8'
 
 services:
   # PostgreSQL 데이터베이스 서비스
-  db:
+  dynamic-simulator-db:
     image: postgres:15-alpine
-    container_name: simulator_db
+    container_name: dynamic-simulator-db
     restart: unless-stopped
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       POSTGRES_DB: ${DB_NAME:-simulator_db}
       POSTGRES_USER: ${DB_USER:-simulator-admin}
@@ -18,12 +18,66 @@ services:
       - "${DB_PORT:-5434}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - dynamic-simulator-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-simulator-admin} -d ${DB_NAME:-simulator_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # Backend API 서비스 (FastAPI)
+  dynamic-simulator-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dynamic-simulator-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-simulator-admin}:${DB_PASSWORD:-DBpass}@dynamic-simulator-db:5432/${DB_NAME:-simulator_db}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      DB_USER: ${DB_USER:-simulator-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-DBpass}
+      DB_HOST: dynamic-simulator-db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-simulator_db}
+    volumes:
+      - ./backend/app:/app/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      dynamic-simulator-db:
+        condition: service_healthy
+    networks:
+      - dynamic-simulator-network
+
+  # Frontend 서비스 (React)
+  dynamic-simulator-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dynamic-simulator-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      - dynamic-simulator-backend
+    networks:
+      - dynamic-simulator-network
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+
 volumes:
   postgres_data:
+    name: dynamic-simulator-postgres-data
     driver: local
+
+networks:
+  dynamic-simulator-network:
+    name: dynamic-simulator-network
+    driver: bridge

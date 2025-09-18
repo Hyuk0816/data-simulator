@@ -34,11 +34,15 @@ import {
     Speed as SpeedIcon,
     CheckCircle as CheckCircleIcon,
     Cancel as CancelIcon,
-    Webhook as WebhookIcon
+    Webhook as WebhookIcon,
+    Warning as WarningIcon,
+    BuildCircle as BuildCircleIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/common/Layout';
 import simulatorService from '../services/simulatorService';
+import FailureScenarioSelector from '../components/failure/FailureScenarioSelector';
+import FailureScenarioCreateFromSimulator from '../components/failure/FailureScenarioCreateFromSimulator';
 
 const Dashboard = ({ darkMode, setDarkMode }) => {
     const navigate = useNavigate();
@@ -46,6 +50,7 @@ const Dashboard = ({ darkMode, setDarkMode }) => {
     const [loading, setLoading] = useState(true);
     const [deleteLoading, setDeleteLoading] = useState({});
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+    const [createScenarioDialog, setCreateScenarioDialog] = useState({ open: false, simulator: null });
 
     useEffect(() => {
         fetchSimulators();
@@ -91,6 +96,20 @@ const Dashboard = ({ darkMode, setDarkMode }) => {
                 setDeleteLoading(prev => ({ ...prev, [id]: false }));
             }
         }
+    };
+
+    const handleCreateScenario = (simulator) => {
+        setCreateScenarioDialog({ open: true, simulator });
+    };
+
+    const handleScenarioCreated = () => {
+        setSnackbar({ 
+            open: true, 
+            message: '고장 시나리오가 성공적으로 생성되었습니다.', 
+            severity: 'success' 
+        });
+        // 시뮬레이터 목록 새로고침
+        fetchSimulators();
     };
 
     const copyApiUrl = (simulator) => {
@@ -418,7 +437,8 @@ const Dashboard = ({ darkMode, setDarkMode }) => {
                                                     justifyContent: 'space-between',
                                                     bgcolor: (theme) => alpha(theme.palette.background.default, 0.5),
                                                     borderRadius: 1,
-                                                    p: 1
+                                                    p: 1,
+                                                    mb: 2
                                                 }}
                                             >
                                                 <FormControlLabel
@@ -444,6 +464,34 @@ const Dashboard = ({ darkMode, setDarkMode }) => {
                                                     variant="outlined"
                                                 />
                                             </Box>
+
+                                            {/* 고장 시나리오 섹션 */}
+                                            {simulator.is_active && (
+                                                <Box sx={{ mt: 2 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                                        <Typography variant="subtitle2" color="text.secondary">
+                                                            고장 시나리오
+                                                        </Typography>
+                                                        <Button
+                                                            size="small"
+                                                            startIcon={<BuildCircleIcon />}
+                                                            onClick={() => handleCreateScenario(simulator)}
+                                                            sx={{ textTransform: 'none' }}
+                                                        >
+                                                            시나리오 생성
+                                                        </Button>
+                                                    </Box>
+                                                    <FailureScenarioSelector
+                                                        simulatorId={simulator.id}
+                                                        simulatorName={simulator.name}
+                                                        compact={true}
+                                                        onScenarioChange={(scenario) => {
+                                                            console.log('Scenario changed:', scenario);
+                                                            // 필요시 상태 업데이트
+                                                        }}
+                                                    />
+                                                </Box>
+                                            )}
                                         </CardContent>
                                         
                                         {/* 액션 버튼 */}
@@ -554,6 +602,14 @@ const Dashboard = ({ darkMode, setDarkMode }) => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* 고장 시나리오 생성 다이얼로그 */}
+            <FailureScenarioCreateFromSimulator
+                open={createScenarioDialog.open}
+                onClose={() => setCreateScenarioDialog({ open: false, simulator: null })}
+                simulator={createScenarioDialog.simulator}
+                onCreated={handleScenarioCreated}
+            />
         </Layout>
     );
 };

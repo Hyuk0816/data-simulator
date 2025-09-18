@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import CreateSimulator from './pages/CreateSimulator.jsx';
 import EditSimulator from './pages/EditSimulator.jsx';
 import Profile from './pages/Profile.jsx';
+import FailureScenarios from './pages/FailureScenarios.jsx';
 
 // Components
 import PrivateRoute from './components/common/PrivateRoute.jsx';
@@ -63,6 +64,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Profile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/failure-scenarios"
+            element={
+              <PrivateRoute>
+                <FailureScenarios darkMode={darkMode} setDarkMode={setDarkMode} />
               </PrivateRoute>
             }
           />

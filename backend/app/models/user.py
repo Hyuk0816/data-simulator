@@ -1,7 +1,12 @@
 from sqlalchemy import String, Integer, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
+from typing import TYPE_CHECKING, List
 from ..database import Base
+
+if TYPE_CHECKING:
+    from .simulator import Simulator
+    from .failure_scenario import FailureScenario
 
 
 class User(Base):
@@ -20,4 +25,6 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
     
     # 관계 설정: User와 Simulator 간의 1:N 관계
-    simulators: Mapped[list["Simulator"]] = relationship("Simulator", back_populates="owner", cascade="all, delete-orphan")
+    simulators: Mapped[List["Simulator"]] = relationship("Simulator", back_populates="owner", cascade="all, delete-orphan")
+    # 관계 설정: User와 FailureScenario 간의 1:N 관계
+    failure_scenarios: Mapped[List["FailureScenario"]] = relationship("FailureScenario", back_populates="owner", cascade="all, delete-orphan")

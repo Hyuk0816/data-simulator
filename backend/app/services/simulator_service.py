@@ -11,6 +11,8 @@ from datetime import datetime
 
 from ..models.simulator import Simulator
 from ..models.user import User
+from ..models.failure_scenario import FailureScenario
+from .failure_engine import FailureEngine
 from ..schemas.simulator import (
     SimulatorCreate, 
     SimulatorUpdate, 
@@ -215,6 +217,49 @@ class SimulatorService:
         
         # 랜덤 값 생성 처리
         result_parameters = SimulatorService._generate_random_values(parameters, parameter_config)
+        
+        # 고장 시나리오 확인 및 적용
+        stmt = select(FailureScenario).where(
+            and_(
+                FailureScenario.simulator_id == simulator.id,
+                FailureScenario.is_applied == True
+            )
+        )
+        applied_scenario = db.scalar(stmt)
+        
+        if applied_scenario:
+            # 고장 파라미터로 덮어쓰기
+            try:
+                failure_params = json.loads(applied_scenario.failure_parameters)
+                
+                # 고급 설정이 있는 경우 NumPy 엔진 사용
+                if applied_scenario.advanced_config:
+                    try:
+                        advanced_config = json.loads(applied_scenario.advanced_config)
+                        failure_config = {
+                            'failure_parameters': failure_params,
+                            'advanced_config': advanced_config
+                        }
+                        
+                        # NumPy 엔진으로 고장 시나리오 적용
+                        engine = FailureEngine()
+                        result_parameters = engine.apply_failure_scenario(
+                            result_parameters,
+                            failure_config,
+                            datetime.utcnow()
+                        )
+                        
+                        logging.info(f"NumPy 엔진으로 고급 고장 시나리오 적용: scenario_id={applied_scenario.id}")
+                    except (json.JSONDecodeError, Exception) as e:
+                        logging.error(f"고급 고장 시나리오 적용 오류: {e}")
+                        # 기본 고장 파라미터만 적용
+                        result_parameters.update(failure_params)
+                else:
+                    # 기본 고장 파라미터만 적용
+                    result_parameters.update(failure_params)
+                    
+            except json.JSONDecodeError:
+                logging.error(f"고장 시나리오 파라미터 파싱 오류: scenario_id={applied_scenario.id}")
         
         return {
             "type": "active",

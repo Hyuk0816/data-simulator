@@ -1,11 +1,12 @@
 from sqlalchemy import String, Integer, DateTime, Boolean, ForeignKey, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from ..database import Base
 
 if TYPE_CHECKING:
     from .user import User
+    from .failure_scenario import FailureScenario
 
 
 class Simulator(Base):
@@ -29,6 +30,12 @@ class Simulator(Base):
     
     # 관계 설정: Simulator와 User 간의 N:1 관계
     owner: Mapped["User"] = relationship("User", back_populates="simulators")
+    # 관계 설정: Simulator와 FailureScenario 간의 1:N 관계
+    failure_scenarios: Mapped[List["FailureScenario"]] = relationship(
+        "FailureScenario", 
+        back_populates="simulator",
+        cascade="all, delete-orphan"
+    )
     
     def __repr__(self) -> str:
         return f"Simulator(id={self.id!r}, name={self.name!r}, user_id={self.user_id!r}, is_active={self.is_active!r})"
