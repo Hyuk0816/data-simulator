@@ -24,7 +24,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # 애플리케이션 포트 노출
-EXPOSE 8000
+EXPOSE 5555
 
 # 서버 실행 (uvicorn 사용 - 로그 레벨 debug로 설정)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5555", "--reload", "--log-level", "debug"]

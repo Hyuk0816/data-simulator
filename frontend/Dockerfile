@@ -1,5 +1,5 @@
-# Node.js 18 공식 이미지 사용 (build stage)
-FROM node:18-alpine AS builder
+# Node.js 22 공식 이미지 사용 (build stage) - Vite 7 요구사항
+FROM node:22-alpine AS builder
 
 # 작업 디렉토리 설정
 WORKDIR /app
@@ -10,12 +10,20 @@ RUN apk add --no-cache python3 make g++
 # package.json과 package-lock.json 복사
 COPY package*.json ./
 
-# node_modules와 package-lock.json 삭제 후 재설치 (Rollup 이슈 해결)
-RUN rm -rf node_modules package-lock.json && \
-    npm install
+# node_modules와 package-lock.json 삭제 후 재설치
+# esbuild 플랫폼별 바이너리 문제 해결
+RUN rm -rf node_modules package-lock.json ~/.npm && \
+    npm cache clean --force && \
+    npm install --platform=linux --arch=x64 && \
+    npm uninstall esbuild && \
+    npm install esbuild@latest
 
 # 애플리케이션 코드 복사
 COPY . .
+
+# 환경변수 설정 (빌드 시점에 주입)
+ARG REACT_APP_API_URL=http://localhost:5555
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 # React 애플리케이션 빌드
 RUN npm run build
@@ -32,7 +40,7 @@ RUN echo 'server { \
         try_files $uri $uri/ /index.html; \
     } \
     location /api { \
-        proxy_pass http://dynamic-simulator-backend:8000; \
+        proxy_pass http://dynamic-simulator-backend:5555; \
         proxy_http_version 1.1; \
         proxy_set_header Upgrade $http_upgrade; \
         proxy_set_header Connection "upgrade"; \

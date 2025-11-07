@@ -27,7 +27,7 @@ from app.models.simulator import Base as SimulatorBase
 # 모든 모델의 메타데이터를 통합
 target_metadata = UserBase.metadata
 
-# other values from the config, defined by the needs of .env.py,
+# other values from the config, defined by the needs of ..env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.

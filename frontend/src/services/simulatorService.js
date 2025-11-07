@@ -194,7 +194,7 @@ class SimulatorService {
      */
     getSimulatorEndpoint(userId, simulatorName) {
         const baseUrl = window.location.origin.includes('localhost') 
-            ? 'http://localhost:8000' 
+            ? (process.env.REACT_APP_API_URL || 'http://localhost:5555')
             : window.location.origin;
         return `${baseUrl}/api/data/${userId}/${simulatorName}`;
     }

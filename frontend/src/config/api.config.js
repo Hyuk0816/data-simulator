@@ -5,7 +5,7 @@
 
 const API_CONFIG = {
   // 개발 환경 백엔드 서버 URL
-  BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
+  BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:5555',
   
   // API 엔드포인트
   ENDPOINTS: {
