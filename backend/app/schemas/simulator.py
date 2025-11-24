@@ -116,6 +116,7 @@ class SimulatorUpdate(BaseModel):
     """시뮬레이터 업데이트용 스키마"""
     name: Optional[str] = Field(None, min_length=1, max_length=255, description="시뮬레이터 이름")
     parameters: Optional[Dict[str, Any]] = Field(None, description="시뮬레이터 파라미터")
+    parameter_config: Optional[Dict[str, ParameterConfig]] = Field(None, description="파라미터 설정 (랜덤 값 생성용)")
     is_active: Optional[bool] = Field(None, description="시뮬레이터 활성화 상태")
 
     @field_validator('name')

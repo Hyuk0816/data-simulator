@@ -274,12 +274,18 @@ const SimulatorForm = ({ mode = 'create' }) => {
                 // Edit mode - only send changed data
                 const updateData = {};
                 if (name !== simulator.name) updateData.name = name;
-                if (JSON.stringify(parameterObj) !== JSON.stringify(simulator.parameters)) {
+
+                // 파라미터 또는 파라미터 설정이 변경되었는지 확인
+                const parametersChanged = JSON.stringify(parameterObj) !== JSON.stringify(simulator.parameters);
+                const configChanged = JSON.stringify(parameterConfig) !== JSON.stringify(simulator.parameter_config);
+
+                if (parametersChanged || configChanged) {
                     updateData.parameters = parameterObj;
                     updateData.parameter_config = parameterConfig;
                 }
+
                 if (isActive !== simulator.is_active) updateData.is_active = isActive;
-                
+
                 if (Object.keys(updateData).length === 0) {
                     setSuccessMessage('변경사항이 없습니다.');
                     setSaving(false);
