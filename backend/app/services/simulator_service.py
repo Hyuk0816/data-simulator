@@ -112,48 +112,57 @@ class SimulatorService:
         return list(db.scalars(stmt).all())
     
     @staticmethod
-    def update_simulator(db: Session, simulator_id: int, 
+    def update_simulator(db: Session, simulator_id: int,
                         user_id: int, simulator_update: SimulatorUpdate) -> Optional[Simulator]:
         """시뮬레이터 정보 업데이트"""
-        # 시뮬레이터 조회 및 소유권 확인
-        db_simulator = SimulatorService.get_simulator_by_id(db, simulator_id)
-        if not db_simulator:
-            return None
-        
-        if db_simulator.user_id != user_id:
-            raise ValueError("해당 시뮬레이터를 수정할 권한이 없습니다.")
-        
-        # 업데이트할 필드만 처리
-        update_data = simulator_update.model_dump(exclude_unset=True)
-        
-        # 이름 변경 시 중복 검사
-        if "name" in update_data and update_data["name"]:
-            new_name = update_data["name"]
-            if new_name != db_simulator.name:
-                existing_simulator = SimulatorService.get_simulator_by_name_and_user(
-                    db, str(user_id), new_name
+        try:
+            # 시뮬레이터 조회 및 소유권 확인
+            db_simulator = SimulatorService.get_simulator_by_id(db, simulator_id)
+            if not db_simulator:
+                return None
+
+            if db_simulator.user_id != user_id:
+                raise ValueError("해당 시뮬레이터를 수정할 권한이 없습니다.")
+
+            # 업데이트할 필드만 처리
+            update_data = simulator_update.model_dump(exclude_unset=True)
+            logging.info(f"Update data received: {update_data}")
+
+            # 이름 변경 시 중복 검사
+            if "name" in update_data and update_data["name"]:
+                new_name = update_data["name"]
+                if new_name != db_simulator.name:
+                    existing_simulator = SimulatorService.get_simulator_by_name_and_user(
+                        db, str(user_id), new_name
+                    )
+                    if existing_simulator:
+                        raise ValueError(f"이미 '{new_name}' 이름의 시뮬레이터가 존재합니다.")
+
+            # 파라미터 업데이트 시 JSON 문자열로 변환
+            if "parameters" in update_data and update_data["parameters"] is not None:
+                update_data["parameters"] = json.dumps(update_data["parameters"], ensure_ascii=False)
+
+            # parameter_config 업데이트 시 JSON 문자열로 변환
+            if "parameter_config" in update_data and update_data["parameter_config"] is not None:
+                logging.info(f"Parameter config type: {type(update_data['parameter_config'])}")
+                logging.info(f"Parameter config content: {update_data['parameter_config']}")
+                update_data["parameter_config"] = json.dumps(
+                    {k: v.model_dump() for k, v in update_data["parameter_config"].items()},
+                    ensure_ascii=False
                 )
-                if existing_simulator:
-                    raise ValueError(f"이미 '{new_name}' 이름의 시뮬레이터가 존재합니다.")
-        
-        # 파라미터 업데이트 시 JSON 문자열로 변환
-        if "parameters" in update_data and update_data["parameters"] is not None:
-            update_data["parameters"] = json.dumps(update_data["parameters"], ensure_ascii=False)
-        
-        # parameter_config 업데이트 시 JSON 문자열로 변환
-        if "parameter_config" in update_data and update_data["parameter_config"] is not None:
-            update_data["parameter_config"] = json.dumps(
-                {k: v.model_dump() for k, v in update_data["parameter_config"].items()}, 
-                ensure_ascii=False
-            )
-        
-        # 업데이트 적용
-        for field, value in update_data.items():
-            setattr(db_simulator, field, value)
-        
-        db.commit()
-        db.refresh(db_simulator)
-        return db_simulator
+
+            # 업데이트 적용
+            for field, value in update_data.items():
+                setattr(db_simulator, field, value)
+
+            db.commit()
+            db.refresh(db_simulator)
+            return db_simulator
+
+        except Exception as e:
+            logging.error(f"Error in update_simulator: {type(e).__name__}: {str(e)}")
+            logging.error(f"Update data: {update_data if 'update_data' in locals() else 'N/A'}")
+            raise
     
     @staticmethod
     def delete_simulator(db: Session, simulator_id: int, user_id: int) -> bool:
